@@ -132,14 +132,39 @@ Spring Boot Application
 
 ### 6.2 ERP API (`/api/erp`)
 
+#### Orders
+
 | Method | Endpoint | Description |
 |------|--------|------------|
-| GET | `/api/erp/orders/pull` | Pull new orders |
-| POST | `/api/erp/orders/{id}/ack` | Acknowledge order |
-| GET | `/api/erp/orders` | List orders |
-| GET | `/api/erp/orders/{id}` | Get order details |
-| PUT | `/api/erp/orders/{id}/status` | Update order status |
-| GET | `/api/erp/customers/{id}` | Get customer |
+| GET | `/api/erp/orders/pull` | Pull NEW orders from CRM (ERP consumption) |
+| POST | `/api/erp/orders/{id}/ack` | Acknowledge imported order (NEW → PROCESSING) |
+| GET | `/api/erp/orders` | List orders (default: NEW only) |
+| GET | `/api/erp/orders/{id}` | Retrieve order details |
+| PUT | `/api/erp/orders/{id}/status` | Update order lifecycle status |
+
+#### Customers
+
+| Method | Endpoint | Description |
+|------|--------|------------|
+| GET | `/api/erp/customers/{id}` | Retrieve customer information |
+
+---
+
+#### Order Status Filtering Behavior
+
+The ERP order listing endpoint supports status-based filtering.  
+If no status is provided, **only NEW orders are returned by default**, ensuring ERP systems process only unhandled orders.
+
+| Request | Status filter applied |
+|-------------------------------------|---------------------|
+| `/api/erp/orders` | **NEW only (default)** |
+| `/api/erp/orders?status=NEW` | NEW only |
+| `/api/erp/orders?status=PROCESSING` | PROCESSING |
+| `/api/erp/orders?status=SHIPPED` | SHIPPED |
+| `/api/erp/orders?status=INVOICED` | INVOICED |
+
+This design supports controlled ERP order processing and prevents duplicate handling of already acknowledged or completed orders.
+
 
 ---
 
