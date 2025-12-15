@@ -1,5 +1,6 @@
 package com.integration.crmerpsync.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.integration.crmerpsync.enums.OrderStatus;
 import jakarta.persistence.*;
 import lombok.*;
@@ -17,6 +18,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 @Table(name = "orders")
 public class Order {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)

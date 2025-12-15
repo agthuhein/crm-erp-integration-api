@@ -1,4 +1,5 @@
 package com.integration.crmerpsync.entity;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -13,6 +14,7 @@ public class OrderItem {
 
     @ManyToOne(fetch=FetchType.LAZY, optional=false)
     @JoinColumn(name="order_id", nullable=false)
+    @JsonIgnore
     private Order order;
 
     @ManyToOne(fetch=FetchType.LAZY, optional=false)
