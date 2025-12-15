@@ -104,6 +104,20 @@ public class OrderService {
             default -> false;
         };
     }
+    @Transactional
+    public Order acknowledgeOrder(Long id) {
+        Order order = getOrder(id);
+        if(order.getStatus() != OrderStatus.NEW) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Only new order can be acknowledged");
+        }
+        order.setStatus(OrderStatus.PROCESSING);
+        return  orderRepository.save(order);
+    }
+
+    public Page<Order> getNewOrders(int limit){
+        Pageable pg = PageRequest.of(0, limit, Sort.by(Sort.Direction.DESC, "createdAt"));
+        return orderRepository.findByStatus(OrderStatus.NEW, pg);
+    }
 
     /*private boolean isValidTransition(OrderStatus current, OrderStatus next) {
         if (current == OrderStatus.NEW) return next == OrderStatus.PROCESSING || next == OrderStatus.CANCELLED;

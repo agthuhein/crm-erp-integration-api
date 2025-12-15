@@ -46,4 +46,13 @@ public class ErpController {
         return customerService.getById(id);
     }
 
+    @GetMapping("/orders/pull")
+    public Page<Order> pullNewOrders(@RequestParam(defaultValue = "50") int limit) {
+        return orderService.getNewOrders(limit);
+    }
+
+    @PostMapping("/orders/{id}/ack")
+    public Order acknowledge(@PathVariable Long id) {
+        return orderService.acknowledgeOrder(id);
+    }
 }
