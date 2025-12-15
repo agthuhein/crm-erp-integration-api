@@ -260,7 +260,7 @@ http://localhost:8080
 All APIs were tested using **Postman**.
 
 ### 9.1 Import Postman Collection
-A Postman collection named **`CRM ERP Sync API.postman_collection.json`** is provided in this repository to allow easy testing of all REST APIs.
+A Postman collection named **`CRM ERP Sync API.postman_collection.json`** is provided under **`Postman`** directory in this repository to allow easy testing of all REST APIs.
 
 ### 9.2 Steps to Import a Postman Collection
 
