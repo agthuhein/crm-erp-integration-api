@@ -1,13 +1,14 @@
+
 # CRM ↔ ERP Customer and Order Synchronization REST API
 
 ---
 
 ## 1. Introduction
 
-This project implements a RESTful API to integrate **CRM** and **ERP** business systems.
+This project implements a RESTful API to integrate **Customer Relationship Management (CRM)** and **Enterprise Resource Planning (ERP)** business systems.  
 The system focuses on synchronizing **customer and order data**, enabling reliable data exchange, process automation, and reporting across enterprise applications.
 
-The solution is built using **Spring Boot**, **REST APIs**, and **MySQL**, following clean architecture and real-world enterprise integration best practices.
+The solution is built using **Spring Boot**, **RESTful APIs**, and **MySQL**, following clean architecture principles and real-world enterprise integration best practices.
 
 ---
 
@@ -34,7 +35,7 @@ The solution is built using **Spring Boot**, **REST APIs**, and **MySQL**, follo
 | Postman | API Testing |
 | CSV | Data export format |
 
-Java 21 LTS is used to ensure long-term support, modern language features, and compatibility with Spring Boot 3.x.
+> Java 21 (LTS) is used to ensure long-term support, modern language features, and compatibility with Spring Boot 3.x.
 
 ---
 
@@ -65,67 +66,46 @@ The system follows a layered, service-oriented architecture that simulates real-
 
 ### Logical Architecture Overview
 
-```mathematica
-┌────────────────────┐
-│   Client / Postman │
-└─────────┬──────────┘
-          │ REST API Calls
-          ▼
-┌──────────────────────────────────────────┐
-│              Spring Boot Application     │
-│                                          │
-│  ┌───────────────┐   ┌─────────────────┐ │
-│  │   CRM API     │   │     ERP API     │ │
-│  │ (/api/crm)    │   │   (/api/erp)    │ │
-│  │               │   │                 │ │
-│  │ - Customers   │   │ - Pull Orders   │ │
-│  │ - Orders      │   │ - Acknowledge   │ │
-│  │               │   │ - Update Status │ │
-│  └───────┬───────┘   └────────┬────────┘ │
-│          │                    │          │
-│          └──────────┬─────────┘          │
-│                     ▼                    │
-│          ┌───────────────────────────┐   │
-│          │     Integration API       │   │
-│          │ (/api/integrations)       │   │
-│          │                           │   │
-│          │ - Bulk Import             │   │
-│          │ - Webhooks                │   │
-│          │ - CSV Export              │   │
-│          │ - Health & Metrics        │   │
-│          └───────────┬───────────────┘   │
-│                      ▼                   │
-│        ┌────────────────────────────┐    │
-│        │ Service Layer              │    │
-│        │ - Business Logic           │    │
-│        │ - Validation               │    │
-│        │ - Order Lifecycle          │    │
-│        └───────────┬────────────────┘    │
-│                    ▼                     │
-│        ┌────────────────────────────┐    │
-│        │ Repository Layer (JPA)     │    │
-│        │ - CustomerRepository       │    │
-│        │ - OrderRepository          │    │
-│        │ - ProductRepository        │    │
-│        └───────────┬────────────────┘    │
-│                    ▼                     │
-│        ┌────────────────────────────┐    │
-│        │ MySQL Database             │    │
-│        │ crm_erp_sync_db            │    │
-│        └────────────────────────────┘    │
-└──────────────────────────────────────────┘
+```
+Client / Postman
+        │
+        ▼
+Spring Boot Application
+│
+├── CRM API (/api/crm)
+│   ├── Customers
+│   └── Orders
+│
+├── ERP API (/api/erp)
+│   ├── Pull Orders
+│   ├── Acknowledge Orders
+│   └── Update Status
+│
+├── Integration API (/api/integrations)
+│   ├── Bulk Import
+│   ├── Webhooks
+│   ├── CSV Export
+│   └── Health & Metrics
+│
+├── Service Layer
+│   ├── Business Logic
+│   ├── Validation
+│   └── Order Lifecycle
+│
+├── Repository Layer (JPA)
+│   ├── CustomerRepository
+│   ├── OrderRepository
+│   └── ProductRepository
+│
+└── MySQL Database (crm_erp_sync_db)
 ```
 
 ### Architecture Explanation
 
-- **Controller Layer**
-  - Exposes REST APIs grouped by business responsibility (CRM, ERP, Integration)
-- **Service Layer**
-  - Contains business logic, validations, and lifecycle rules
-- **Repository Layer**
-  - Handles database access using Spring Data JPA
-- **Database Layer**
-  - MySQL database (`crm_erp_sync_db`) persists all data
+- **Controller Layer** – Exposes REST APIs grouped by business responsibility
+- **Service Layer** – Contains business logic, validations, and lifecycle rules
+- **Repository Layer** – Handles database access using Spring Data JPA
+- **Database Layer** – Persists data in MySQL
 
 ---
 
@@ -154,7 +134,7 @@ The system follows a layered, service-oriented architecture that simulates real-
 
 | Method | Endpoint | Description |
 |------|--------|------------|
-| GET | `/api/erp/orders/pull` | Pull NEW orders |
+| GET | `/api/erp/orders/pull` | Pull new orders |
 | POST | `/api/erp/orders/{id}/ack` | Acknowledge order |
 | GET | `/api/erp/orders` | List orders |
 | GET | `/api/erp/orders/{id}` | Get order details |
@@ -182,9 +162,11 @@ The system follows a layered, service-oriented architecture that simulates real-
 - Pagination and filtering support
 - Order lifecycle management
 - ERP pull-and-acknowledge integration pattern
-- Webhook-based asynchronous status updates
+- Webhook-based asynchronous updates
 - CSV export for reporting and BI tools
 - Centralized exception handling
+
+---
 
 ## 8. Setup and Installation
 
@@ -205,88 +187,72 @@ The system follows a layered, service-oriented architecture that simulates real-
 git clone https://github.com/agthuhein/crm-erp-integration-api.git
 cd crm-erp-integration-api
 ```
-#### 2. Set up the MySQL Database
 
-1. Start the MySQL server
-
-2. Create a new database:
+#### 2. Create the MySQL Database
 
 ```sql
 CREATE DATABASE crm_erp_sync_db;
 ```
-3. Go to Database Backup folder. Then get the MySQL Database backup file
-4. Open command line/terminal. Change directory to where the backup file exits
-5. Backup the crm_erp_sync_db_BK.sql using the command below
 
-```sql
-mysql -u root -p crm_erp_sync_db < crm_erp_sync_db_BK.sql
+#### 3. (Optional) Restore Database Backup
+- Go to the **Database Backup** folder and locate the MySQL database backup file.
+- Open the command line / terminal and change the directory to the location where the backup file exists.
+- Restore the database using the following command:
+```bash
+mysql -u root -p crm_erp_sync_db < your_database_backup.sql
 ```
-6. Configure the connection in application.yml file
 
+#### 4. Configure Database Connection
 
-#### 3. Configure the database connection
-
-Open src/main/resources/application.yml and configure:
+Edit `src/main/resources/application.yml`:
 
 ```yaml
 spring:
   datasource:
-    url: jdbc:mysql://localhost:3306/crm_erp_sync
+    url: jdbc:mysql://localhost:3306/crm_erp_sync_db
     username: root
     password: your_password
-
 ```
-Database tables are created automatically on application startup using Hibernate (ddl-auto=update).
 
-#### 4. Run the application
-From the project root directory:
+> Database tables are created automatically on startup using Hibernate (`ddl-auto=update`).
+
+#### 5. Run the Application
+
 ```bash
 mvn clean spring-boot:run
 ```
 
-The application will be available at:
-```arduino
+Application URL:
+
+```
 http://localhost:8080
 ```
 
-### 9. Steps to Test the Application
-Install Postman API Client
-Download Postman from:
-```arduino
-https://www.postman.com/downloads/
-```
+---
+
+## 9. Steps to Test the Application
+
+All APIs were tested using **Postman**.
+
 ### Recommended API Testing Flow
 
-1. **Create Customer**
-- `POST /api/crm/customer`
+1. Create Customer – `POST /api/crm/customer`
+2. Create Order – `POST /api/crm/order`
+3. ERP Pull Orders – `GET /api/erp/orders/pull`
+4. ERP Acknowledge Order – `POST /api/erp/orders/{id}/ack`
+5. Update Order Status – `PUT /api/erp/orders/{id}/status`
+6. View Metrics – `GET /api/integrations/metrics`
+7. Export Orders (CSV) – `GET /api/integrations/export/orders.csv`
 
-2. **Create Order**
-- `POST /api/crm/order`
+---
 
-3. **ERP Pull New Orders**
-- `GET /api/erp/orders/pull`
+## 10. Testing Summary
 
-4. **ERP Acknowledge Order**
-- `POST /api/erp/orders/{id}/ack`
+All APIs were tested to verify correctness, data integrity, and integration workflows, including:
 
-5. **Update Order Status**
-- `PUT /api/erp/orders/{id}/status`
-
-6. **View Metrics**
-- `GET /api/integrations/metrics`
-
-7. **Export Orders as CSV**
-- `GET /api/integrations/export/orders.csv?from=YYYY-MM-DDTHH:mm:ssZ&to=YYYY-MM-DDTHH:mm:ssZ`
-
-### 10. Testing Summary
-
-All APIs were tested using **Postman** to verify correctness, data integrity, and integration workflows.
-
-Test cases include:
-
-- Customer creation and update
+- Customer creation and updates
 - Order creation
-- ERP pull and acknowledge workflow
+- ERP pull-and-acknowledge workflow
 - Order status transitions
 - Bulk customer import
 - Metrics retrieval
@@ -294,7 +260,7 @@ Test cases include:
 
 ---
 
-### 11. Conclusion
+## 11. Conclusion
 
 This project will show how to use REST API for integrating enterprise systems, ensuring data consistency; using REST API also supports the principle of Separation Between Use Cases and therefore allows for the development of a scalable and secure REST API interface to perform integration between two separate business applications (CRM, ERP).
 
