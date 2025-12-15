@@ -12,6 +12,6 @@ public class ErpOrderStatusWebhook {
     @NotNull
     private OrderStatus status;
 
-    private String reference; // optional (ERP reference id)
+    private String reference;
 
 }

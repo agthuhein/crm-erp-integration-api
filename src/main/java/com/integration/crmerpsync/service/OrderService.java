@@ -90,7 +90,7 @@ public class OrderService {
         OrderStatus old = order.getStatus();
         OrderStatus newStatus = orderStatusUpdate.getStatus();
 
-        if(!isValidTransition(newStatus, old)) {
+        if(!isValidTransition(old, newStatus)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid transition" + old + " to " + newStatus);
         }
         order.setStatus(newStatus);
