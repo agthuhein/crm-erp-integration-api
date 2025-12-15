@@ -1,6 +1,7 @@
 package com.integration.crmerpsync.service;
 
 import com.integration.crmerpsync.DTO.OrderCreate;
+import com.integration.crmerpsync.DTO.OrderResponse;
 import com.integration.crmerpsync.DTO.OrderStatusUpdate;
 import com.integration.crmerpsync.Repository.CustomerRepository;
 import com.integration.crmerpsync.Repository.OrderRepository;
@@ -11,7 +12,6 @@ import com.integration.crmerpsync.entity.OrderItem;
 import com.integration.crmerpsync.entity.Product;
 import com.integration.crmerpsync.enums.OrderStatus;
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
 import org.springframework.data.domain.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -28,12 +28,13 @@ public class OrderService {
     private final OrderRepository orderRepository;
     private final CustomerRepository customerRepository;
     private final ProductRepository productRepository;
-    private final CustomerService customerService;
 
+
+    //Create orddder
     @Transactional
     public Order createOrder(OrderCreate orderCreate) {
         Customer customer = customerRepository.findById(orderCreate.getCustomerId())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Customer Not Found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Customer not found"));
 
         Order order = Order.builder()
                 .customer(customer)
@@ -41,61 +42,105 @@ public class OrderService {
                 .totalAmount(BigDecimal.ZERO)
                 .build();
 
-        BigDecimal totalAmount = BigDecimal.ZERO;
+        BigDecimal total = BigDecimal.ZERO;
 
-        for(OrderCreate.OrderItemRequest item: orderCreate.getItems()) {
-            Product p = productRepository.findBySku(item.getSku())
-                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid SKU: " + item.getSku()));
+        for (OrderCreate.OrderItemRequest item : orderCreate.getItems()) {
+            Product product = productRepository.findBySku(item.getSku())
+                    .orElseThrow(() ->
+                            new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid SKU: " + item.getSku()));
 
-            BigDecimal unitPrice = p.getUnitPrice();
-            BigDecimal total = unitPrice.multiply(BigDecimal.valueOf(item.getQuantity()));
+            BigDecimal lineTotal =
+                    product.getUnitPrice().multiply(BigDecimal.valueOf(item.getQuantity()));
 
-            OrderItem orderItem = OrderItem.builder()
+            order.getItems().add(OrderItem.builder()
                     .order(order)
-                    .product(p)
+                    .product(product)
                     .quantity(item.getQuantity())
-                    .unitPrice(unitPrice)
-                    .lineTotal(total)
-                    .build();
+                    .unitPrice(product.getUnitPrice())
+                    .lineTotal(lineTotal)
+                    .build());
 
-            order.getItems().add(orderItem);
-            totalAmount = totalAmount.add(total);
+            total = total.add(lineTotal);
         }
-        order.setTotalAmount(totalAmount);
+
+        order.setTotalAmount(total);
         return orderRepository.save(order);
     }
 
-    public Page<Order> findAllOrders(OrderStatus orderStatus, Instant from, Instant to, int page, int size ) {
-        Pageable pg = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
-
-        if(from != null && to != null && orderStatus != null) {
-            return orderRepository.findByStatusAndCreatedAtBetween(orderStatus, from, to, pg);
-        }
-        if(from != null && to != null) {
-            return orderRepository.findByCreatedAtBetween(from, to, pg);
-        }
-        if(orderStatus != null) {
-            return orderRepository.findByStatus(orderStatus, pg);
-        }
-        return orderRepository.findAll(pg);
+    @Transactional
+    public OrderResponse createOrderDto(OrderCreate orderCreate) {
+        Order order = createOrder(orderCreate);
+        return toDto(order);
     }
 
-    public Order getOrder(Long id){
+    //get all orders
+    public Page<Order> findAllOrders(
+            OrderStatus status,
+            Instant from,
+            Instant to,
+            int page,
+            int size
+    ) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
+
+        if (status != null && from != null && to != null)
+            return orderRepository.findByStatusAndCreatedAtBetween(status, from, to, pageable);
+
+        if (from != null && to != null)
+            return orderRepository.findByCreatedAtBetween(from, to, pageable);
+
+        if (status != null)
+            return orderRepository.findByStatus(status, pageable);
+
+        return orderRepository.findAll(pageable);
+    }
+
+    public Page<OrderResponse> findAllOrdersDto(
+            OrderStatus status,
+            Instant from,
+            Instant to,
+            int page,
+            int size
+    ) {
+        return findAllOrders(status, from, to, page, size).map(this::toDto);
+    }
+
+    public Order getOrder(Long id) {
         return orderRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Order not found"));
     }
 
-    public Order updateStatus(Long id, OrderStatusUpdate orderStatusUpdate) {
+    //set order statussss
+    @Transactional
+    public Order updateStatus(Long id, OrderStatusUpdate dto) {
         Order order = getOrder(id);
-        OrderStatus old = order.getStatus();
-        OrderStatus newStatus = orderStatusUpdate.getStatus();
 
-        if(!isValidTransition(old, newStatus)) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid transition" + old + " to " + newStatus);
+        if (!isValidTransition(order.getStatus(), dto.getStatus())) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Invalid transition " + order.getStatus() + " -> " + dto.getStatus()
+            );
         }
-        order.setStatus(newStatus);
+
+        order.setStatus(dto.getStatus());
         return orderRepository.save(order);
     }
+
+    @Transactional
+    public Order acknowledgeOrder(Long id) {
+        Order order = getOrder(id);
+
+        if (order.getStatus() != OrderStatus.NEW) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Only NEW orders can be acknowledged"
+            );
+        }
+
+        order.setStatus(OrderStatus.PROCESSING);
+        return orderRepository.save(order);
+    }
+
     private boolean isValidTransition(OrderStatus current, OrderStatus next) {
         return switch (current) {
             case NEW -> next == OrderStatus.PROCESSING || next == OrderStatus.CANCELLED;
@@ -104,29 +149,19 @@ public class OrderService {
             default -> false;
         };
     }
-    @Transactional
-    public Order acknowledgeOrder(Long id) {
-        Order order = getOrder(id);
-        if(order.getStatus() != OrderStatus.NEW) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Only new order can be acknowledged");
-        }
-        order.setStatus(OrderStatus.PROCESSING);
-        return  orderRepository.save(order);
-    }
-
     public Page<Order> getNewOrders(int limit){
         Pageable pg = PageRequest.of(0, limit, Sort.by(Sort.Direction.DESC, "createdAt"));
         return orderRepository.findByStatus(OrderStatus.NEW, pg);
     }
 
-    /*private boolean isValidTransition(OrderStatus current, OrderStatus next) {
-        if (current == OrderStatus.NEW) return next == OrderStatus.PROCESSING || next == OrderStatus.CANCELLED;
-        if (current == OrderStatus.PROCESSING) return next == OrderStatus.SHIPPED || next == OrderStatus.CANCELLED;
-        if (current == OrderStatus.SHIPPED) return next == OrderStatus.INVOICED;
-        if (current == OrderStatus.INVOICED) return false; // terminal
-        if (current == OrderStatus.CANCELLED) return false; // terminal
-        return false;
-    }*/
-
-
+    private OrderResponse toDto(Order o) {
+        return new OrderResponse(
+                o.getId(),
+                o.getCustomer().getId(),
+                o.getCustomer().getName(),
+                o.getStatus(),
+                o.getTotalAmount(),
+                o.getCreatedAt()
+        );
+    }
 }
