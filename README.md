@@ -259,7 +259,21 @@ http://localhost:8080
 
 All APIs were tested using **Postman**.
 
-### Recommended API Testing Flow
+### 9.1 Import Postman Collection
+A Postman collection named **`CRM ERP Sync API.postman_collection.json`** is provided in this repository to allow easy testing of all REST APIs.
+
+### 9.2 Steps to Import a Postman Collection
+
+1. Open **Postman**
+2. Click **Import** (top-left corner)
+3. In the Import dialog, choose **File**
+4. Click **Upload Files**
+5. Select your collection file:
+    - `.json` (Postman Collection v2 / v2.1)
+6. Click **Import**
+
+
+### 9.3 Recommended API Testing Flow
 
 1. Create Customer – `POST /api/crm/customer`
 2. Create Order – `POST /api/crm/order`
